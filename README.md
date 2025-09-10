@@ -35,3 +35,7 @@ As I said though this is mostly just my personal preference and if you like havi
 This project uses an assertion-based approach. In debug/development builds, asserts that fail will immediately breakpoint, allowing the programmer to diagnose and fix the issue. In release-builds, the asserts still exist but they perform a specified fallback behaviour provided as an argument instead of trapping. Normally the fallback behaviour will just be returning early with an exit code, and the calling code can make things more robust by checking this error code if they care about the result. 
 
 Note that this is a very different approach to just using error-codes. Error-codes by themselves are normally criticised because they can easily be ignored, but here in debug/development builds any issue results in an immediate breakpoint. The programmer can fix the problems that they encounter in debug mode and in release mode the asserts switch to an error-code error-recovery model. The way to deal with errors really depends on the user of the program (programmer/tester/customer), so I think this is the best approach to switch depending on the user. 
+
+# Exception Safety
+
+The C++ data-structures that I've made should still be exception safe, but if you see anything that isn't feel free to make a pull-request. I've used static_asserts to ensure that types are `nothrow_move_constructible` so moves can be done safely (normally it's fairly difficult to reverse out of moving multiple items efficiently because arrays can be left in a partial state if you are not careful). 
