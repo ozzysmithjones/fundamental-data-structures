@@ -702,12 +702,8 @@ public:
         allocator = new_allocator;
     }
 
-    bool is_null() const {
-        return elements == nullptr;
-    }
-
-    bool is_not_null() const {
-        return elements != nullptr;
+    bool is_empty() const {
+        return capacity == 0;
     }
 
 private:
@@ -741,11 +737,12 @@ public:
         }
     }
 
-    template<typename Arg>
-    result append(Arg&& value) {
+    template<typename... Args>
+        requires std::is_constructible_v<T, Args...>
+    result append(Args&&... args) {
         pointer elements = reinterpret_cast<pointer>(elements_data);
         if (count < Capacity) {
-            new (&elements[count]) T(std::forward<Arg>(value));
+            new (&elements[count]) T(std::forward<Args>(args)...);
             ++count;
             return result::success;
         }
@@ -953,6 +950,14 @@ public:
         return !(*this == other);
     }
 
+    bool is_empty() const {
+        return count == 0;
+    }
+
+    bool is_full() const {
+        return count == Capacity;
+    }
+
 private:
     union {
         // Using a union so that we can display the elements data in the debugger. (elements_debugger_visual is never used in the code itself, but can be seen in the debugger to see the internals of elements_data in a more user-friendly way)
@@ -962,7 +967,6 @@ private:
 
     size_type count = 0;
 };
-
 
 /// @brief dynamic array for storing a sequence of elements of type T. Similar to std::vector but with a clearer interface and it assumes that your elements are trivially relocatable so that it can grow more efficiently.
 /// This means that if an element is memcpy'd to a different memory location without invoking any constructors or assignment-operators, that it should still work as expected. This is the case most of the time anyway unless you are doing really fancy things like classes with circular references to themselves.
@@ -1055,8 +1059,9 @@ public:
         return *this;
     }
 
-    template<typename Arg>
-    result append(Arg&& value) requires (std::is_same_v<std::remove_cvref_t<Arg>, T>) {
+    template<typename... Args>
+        requires (std::is_constructible_v<T, Args...>)
+    result append(Args&&... args) {
         if (count == capacity) {
             size_type new_capacity = capacity == 0 ? 4 : (capacity << 1);
             pointer new_elements = reinterpret_cast<pointer>(allocator.realloc(
@@ -1069,7 +1074,7 @@ public:
             elements = new_elements;
             capacity = new_capacity;
         }
-        new (&elements[count]) T(std::forward<Arg>(value));
+        new (&elements[count]) T(std::forward<Args>(args)...);
         ++count;
         return result::success;
     }
@@ -1252,9 +1257,9 @@ public:
         return !(*this == other);
     }
 
-    void preallocate_memory_for(size_type additional_expected_elements) {
+    result preallocate_atleast(size_type additional_expected_elements) {
         if (count + additional_expected_elements <= capacity) {
-            return;
+            return result::success;
         }
         size_type new_capacity = std::bit_ceil(count + additional_expected_elements);
         pointer new_elements = static_cast<pointer>(allocator.realloc(
@@ -1263,14 +1268,15 @@ public:
             sizeof(T) * capacity,
             sizeof(T) * new_capacity
         ));
-        ASSERT(new_elements != nullptr, return, "Out of memory, cannot preallocate space in dynamic_array.");
+        ASSERT(new_elements != nullptr, return result::failure, "Out of memory, cannot preallocate space in dynamic_array.");
         elements = new_elements;
         capacity = new_capacity;
+        return result::success;
     }
 
-    void preallocate_exact_memory_for(size_type additional_expected_elements) {
+    result preallocate_exact(size_type additional_expected_elements) {
         if (count + additional_expected_elements <= capacity) {
-            return;
+            return result::success;
         }
         size_type new_capacity = count + additional_expected_elements;
         pointer new_elements = static_cast<pointer>(allocator.realloc(
@@ -1279,9 +1285,10 @@ public:
             sizeof(T) * capacity,
             sizeof(T) * new_capacity
         ));
-        ASSERT(new_elements != nullptr, return, "Out of memory, cannot preallocate space in dynamic_array.");
+        ASSERT(new_elements != nullptr, return result::failure, "Out of memory, cannot preallocate space in dynamic_array.");
         elements = new_elements;
         capacity = new_capacity;
+        return result::success;
     }
 
     pointer get_data() {
@@ -1294,6 +1301,10 @@ public:
 
     size_type get_capacity() const {
         return capacity;
+    }
+
+    bool is_empty() const {
+        return count == 0;
     }
 
 private:
@@ -1448,6 +1459,10 @@ public:
         return elements;
     }
 
+    bool is_empty() const {
+        return count == 0;
+    }
+
 private:
     T* elements;
     size_type count;
@@ -1554,7 +1569,6 @@ public:
     using const_pointer = const T*;
     using const_reference = const T&;
 
-
     heap_pointer(allocator_base& allocator = global_heap_allocator) : allocator(allocator), ptr(nullptr) {
     }
 
@@ -1595,7 +1609,7 @@ public:
         ptr = nullptr;
     }
 
-    result assign_or_create_default() requires std::is_default_constructible_v<T> {
+    result assign_or_allocate_default() requires std::is_default_constructible_v<T> {
         if (ptr == nullptr) {
             ptr = reinterpret_cast<pointer>(allocator.malloc(alignof(T), sizeof(T)));
             ASSERT(ptr != nullptr, return result::failure, "Out of memory, cannot allocate heap_pointer.");
@@ -1609,7 +1623,7 @@ public:
 
     template<typename... Args>
         requires std::is_constructible_v<T, Args...>
-    result assign_or_create(Args&&... args) {
+    result assign_or_allocate(Args&&... args) {
         if (ptr == nullptr) {
             ptr = reinterpret_cast<pointer>(allocator.malloc(alignof(T), sizeof(T)));
             ASSERT(ptr != nullptr, return result::failure, "Out of memory, cannot allocate heap_pointer.");
@@ -1716,6 +1730,14 @@ public:
 
     bool operator!=(const heap_pointer& other) const {
         return ptr != other.ptr;
+    }
+
+    bool operator==(T* other) const {
+        return ptr == other;
+    }
+
+    bool operator!=(T* other) const {
+        return ptr != other;
     }
 
     allocator_base& get_allocator() const {
