@@ -8,7 +8,6 @@ int main(int, char**) {
     for (int i = 0; i < 10; ++i) {
         arr.append(i);
     }
-
     if (arr.is_empty()) {
         std::cout << "Array is empty\n";
     } else {

@@ -135,7 +135,7 @@ public:
         }
     }
 
-    constexpr result try_copy_element(Enum e, T& out_value) const {
+    constexpr result copy_element(Enum e, T& out_value) const {
         size_type index = static_cast<size_type>(e);
         if (index >= Capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, Capacity);
@@ -145,7 +145,7 @@ public:
         return result::success;
     }
 
-    constexpr result try_set_element(Enum e, const T& value) {
+    constexpr result set_element(Enum e, const T& value) {
         size_type index = static_cast<size_type>(e);
         if (index >= Capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, Capacity);
@@ -277,7 +277,7 @@ public:
         return elements[index];
     }
 
-    constexpr result try_copy_element(size_type index, T& out_value) const {
+    constexpr result copy_element(size_type index, T& out_value) const {
         if (index >= Capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, Capacity);
             return result::failure;
@@ -286,7 +286,7 @@ public:
         return result::success;
     }
 
-    constexpr result try_set_element(size_type index, const T& value) {
+    constexpr result set_element(size_type index, const T& value) {
         if (index >= Capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, Capacity);
             return result::failure;
@@ -577,7 +577,7 @@ public:
         return result::success;
     }
 
-    constexpr result try_copy_element(size_type index, T& out_value) const {
+    constexpr result copy_element(size_type index, T& out_value) const {
         if (index >= capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, capacity);
             return result::failure;
@@ -586,7 +586,7 @@ public:
         return result::success;
     }
 
-    constexpr result try_set_element(size_type index, const T& value) {
+    constexpr result set_element(size_type index, const T& value) {
         if (index >= capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, capacity);
             return result::failure;
@@ -801,7 +801,7 @@ public:
         count = 0;
     }
 
-    result try_copy_element(size_type index, T& out_value) const {
+    result copy_element(size_type index, T& out_value) const {
         const_pointer elements = reinterpret_cast<const_pointer>(elements_data);
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
@@ -811,7 +811,7 @@ public:
         return result::success;
     }
 
-    result try_set_element(size_type index, const T& value) {
+    result set_element(size_type index, const T& value) {
         pointer elements = reinterpret_cast<pointer>(elements_data);
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
@@ -1140,7 +1140,7 @@ public:
         count = 0;
     }
 
-    result try_copy_element(size_type index, T& out_value) const {
+    result copy_element(size_type index, T& out_value) const {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return result::failure;
@@ -1149,7 +1149,7 @@ public:
         return result::success;
     }
 
-    result try_set_element(size_type index, const T& value) {
+    result set_element(size_type index, const T& value) {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return result::failure;
@@ -1372,7 +1372,7 @@ public:
         return !(*this == other);
     }
 
-    result try_copy_element(size_type index, T& out_value) const {
+    result copy_element(size_type index, T& out_value) const {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return result::failure;
@@ -1381,7 +1381,7 @@ public:
         return result::success;
     }
 
-    result try_set_element(size_type index, const T& value) {
+    result set_element(size_type index, const T& value) {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return result::failure;
@@ -1690,7 +1690,7 @@ public:
         return *ptr;
     }
 
-    result try_copy_heap_value(T& out_value) const {
+    result copy_heap_value(T& out_value) const {
         if (ptr == nullptr) [[unlikely]] {
             BUG("Dereferencing null heap_pointer.");
             return result::failure;
@@ -1699,7 +1699,7 @@ public:
         return result::success;
     }
 
-    result try_move_heap_value(T& out_value) {
+    result move_heap_value(T& out_value) {
         if (ptr == nullptr) [[unlikely]] {
             BUG("Dereferencing null heap_pointer.");
             return result::failure;
@@ -1711,7 +1711,7 @@ public:
         return result::success;
     }
 
-    result try_set_heap_value(const T& new_value) {
+    result set_heap_value(const T& new_value) {
         if (ptr == nullptr) [[unlikely]] {
             BUG("Dereferencing null heap_pointer.");
             return result::failure;
