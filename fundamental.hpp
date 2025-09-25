@@ -145,6 +145,16 @@ public:
         return result::success;
     }
 
+    constexpr result move_element(Enum e, T& out_value) {
+        size_type index = static_cast<size_type>(e);
+        if (index >= Capacity) [[unlikely]] {
+            BUG("Index out of bounds (index={}, limit={})", index, Capacity);
+            return result::failure;
+        }
+        out_value = std::move(elements[index]);
+        return result::success;
+    }
+
     constexpr result set_element(Enum e, const T& value) {
         size_type index = static_cast<size_type>(e);
         if (index >= Capacity) [[unlikely]] {
@@ -283,6 +293,15 @@ public:
             return result::failure;
         }
         out_value = elements[index];
+        return result::success;
+    }
+
+    constexpr result move_element(size_type index, T& out_value) {
+        if (index >= Capacity) [[unlikely]] {
+            BUG("Index out of bounds (index={}, limit={})", index, Capacity);
+            return result::failure;
+        }
+        out_value = std::move(elements[index]);
         return result::success;
     }
 
@@ -577,7 +596,7 @@ public:
         return result::success;
     }
 
-    constexpr result copy_element(size_type index, T& out_value) const {
+    result copy_element(size_type index, T& out_value) const {
         if (index >= capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, capacity);
             return result::failure;
@@ -586,7 +605,16 @@ public:
         return result::success;
     }
 
-    constexpr result set_element(size_type index, const T& value) {
+    result move_element(size_type index, T& out_value) {
+        if (index >= capacity) [[unlikely]] {
+            BUG("Index out of bounds (index={}, limit={})", index, capacity);
+            return result::failure;
+        }
+        out_value = std::move(elements[index]);
+        return result::success;
+    }
+
+    result set_element(size_type index, const T& value) {
         if (index >= capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, capacity);
             return result::failure;
@@ -595,7 +623,7 @@ public:
         return result::success;
     }
 
-    constexpr const_reference element_or(size_type index, const_reference fallback) const {
+    const_reference element_or(size_type index, const_reference fallback) const {
         if (index >= capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, capacity);
             return fallback;
@@ -603,7 +631,7 @@ public:
         return elements[index];
     }
 
-    constexpr reference element_or(size_type index, reference fallback) {
+    reference element_or(size_type index, reference fallback) {
         if (index >= capacity) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, capacity);
             return fallback;
@@ -611,21 +639,21 @@ public:
         return elements[index];
     }
 
-    constexpr const_reference element_unsafe(size_type index) const {
+    const_reference element_unsafe(size_type index) const {
         DEBUG_ASSERT(index < capacity, return elements[0], "Index out of bounds (index={}, limit={})", index, capacity);
         return elements[index];
     }
 
-    constexpr reference element_unsafe(size_type index) {
+    reference element_unsafe(size_type index) {
         DEBUG_ASSERT(index < capacity, return elements[0], "Index out of bounds (index={}, limit={})", index, capacity);
         return elements[index];
     }
 
-    constexpr bool bounds_check(size_type index) const {
+    bool bounds_check(size_type index) const {
         return index < capacity;
     }
 
-    constexpr bool contains(const T& value) const {
+    bool contains(const T& value) const {
         for (size_type i = 0; i < capacity; ++i) {
             if (elements[i] == value) {
                 return true;
@@ -634,13 +662,13 @@ public:
         return false;
     }
 
-    constexpr void set_everything(const T& value) {
+    void set_everything(const T& value) {
         for (size_type i = 0; i < capacity; ++i) {
             elements[i] = value;
         }
     }
 
-    constexpr bool find(const T& value, size_type& out_index) const {
+    bool find(const T& value, size_type& out_index) const {
         for (size_type i = 0; i < capacity; ++i) {
             if (elements[i] == value) {
                 out_index = i;
@@ -652,7 +680,7 @@ public:
 
     template<typename Predicate>
         requires std::is_invocable_r_v<bool, Predicate, const T&>
-    constexpr bool find_if(Predicate predicate, size_type& out_index) const {
+    bool find_if(Predicate predicate, size_type& out_index) const {
         for (size_type i = 0; i < capacity; ++i) {
             if (predicate(elements[i])) {
                 out_index = i;
@@ -674,19 +702,19 @@ public:
         return capacity;
     }
 
-    constexpr iterator begin() {
+    iterator begin() {
         return elements;
     }
 
-    constexpr iterator end() {
+    const_iterator end() const {
         return elements + capacity;
     }
 
-    constexpr const_iterator begin() const {
+    const_iterator begin() const {
         return elements;
     }
 
-    constexpr const_iterator end() const {
+    const_iterator end() const {
         return elements + capacity;
     }
 
@@ -811,6 +839,16 @@ public:
         return result::success;
     }
 
+    result move_element(size_type index, T& out_value) {
+        pointer elements = reinterpret_cast<pointer>(elements_data);
+        if (index >= count) [[unlikely]] {
+            BUG("Index out of bounds (index={}, limit={})", index, count);
+            return result::failure;
+        }
+        out_value = std::move(elements[index]);
+        return result::success;
+    }
+
     result set_element(size_type index, const T& value) {
         pointer elements = reinterpret_cast<pointer>(elements_data);
         if (index >= count) [[unlikely]] {
@@ -865,7 +903,7 @@ public:
         return false;
     }
 
-    constexpr void set_everything(const T& value) {
+    void set_everything(const T& value) {
         pointer elements = reinterpret_cast<pointer>(elements_data);
         for (size_type i = 0; i < count; ++i) {
             elements[i] = value;
@@ -928,7 +966,7 @@ public:
         return count;
     }
 
-    constexpr size_type get_capacity() const {
+    size_type get_capacity() const {
         return Capacity;
     }
 
@@ -990,7 +1028,6 @@ public:
         return allocator;
     }
     void set_allocator(const allocator_base& new_allocator) {
-        ASSERT(count == 0, return, "Cannot change allocator of dynamic_array when it is not empty.");
         if (elements != nullptr) {
             allocator.free(elements, alignof(T), sizeof(T) * capacity);
             elements = nullptr;
@@ -1000,7 +1037,7 @@ public:
         allocator = new_allocator;
     }
 
-    dynamic_array(allocator_base& allocator = global_heap_allocator) : allocator(allocator), elements(nullptr), count(0), capacity(0) {
+    constexpr dynamic_array(allocator_base& allocator = global_heap_allocator) : allocator(allocator), elements(nullptr), count(0), capacity(0) {
     }
 
     dynamic_array(size_t capacity, allocator_base& allocator = global_heap_allocator) : allocator(allocator), elements(nullptr), count(0), capacity(0) {
@@ -1146,6 +1183,15 @@ public:
             return result::failure;
         }
         out_value = elements[index];
+        return result::success;
+    }
+
+    result move_element(size_type index, T& out_value) {
+        if (index >= count) [[unlikely]] {
+            BUG("Index out of bounds (index={}, limit={})", index, count);
+            return result::failure;
+        }
+        out_value = std::move(elements[index]);
         return result::success;
     }
 
@@ -1356,7 +1402,7 @@ public:
         return elements + count;
     }
 
-    bool operator==(const slice& other) const {
+    constexpr bool operator==(const slice& other) const {
         if (count != other.count) {
             return false;
         }
@@ -1368,11 +1414,11 @@ public:
         return true;
     }
 
-    bool operator!=(const slice& other) const {
+    constexpr bool operator!=(const slice& other) const {
         return !(*this == other);
     }
 
-    result copy_element(size_type index, T& out_value) const {
+    constexpr result copy_element(size_type index, T& out_value) const {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return result::failure;
@@ -1381,7 +1427,16 @@ public:
         return result::success;
     }
 
-    result set_element(size_type index, const T& value) {
+    constexpr result move_element(size_type index, T& out_value) {
+        if (index >= count) [[unlikely]] {
+            BUG("Index out of bounds (index={}, limit={})", index, count);
+            return result::failure;
+        }
+        out_value = std::move(elements[index]);
+        return result::success;
+    }
+
+    constexpr result set_element(size_type index, const T& value) {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return result::failure;
@@ -1390,7 +1445,7 @@ public:
         return result::success;
     }
 
-    const_reference element_or(size_type index, const_reference fallback) const {
+    constexpr const_reference element_or(size_type index, const_reference fallback) const {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return fallback;
@@ -1398,7 +1453,7 @@ public:
         return elements[index];
     }
 
-    reference element_or(size_type index, reference fallback) {
+    constexpr reference element_or(size_type index, reference fallback) {
         if (index >= count) [[unlikely]] {
             BUG("Index out of bounds (index={}, limit={})", index, count);
             return fallback;
@@ -1406,21 +1461,21 @@ public:
         return elements[index];
     }
 
-    const_reference element_unsafe(size_type index) const {
+    constexpr const_reference element_unsafe(size_type index) const {
         DEBUG_ASSERT(index < count, return elements[0], "Index out of bounds (index={}, limit={})", index, count);
         return elements[index];
     }
 
-    reference element_unsafe(size_type index) {
+    constexpr reference element_unsafe(size_type index) {
         DEBUG_ASSERT(index < count, return elements[0], "Index out of bounds (index={}, limit={})", index, count);
         return elements[index];
     }
 
-    bool bounds_check(size_type index) const {
+    constexpr bool bounds_check(size_type index) const {
         return index < count;
     }
 
-    bool contains(const T& value) const {
+    constexpr bool contains(const T& value) const {
         for (size_type i = 0; i < count; ++i) {
             if (elements[i] == value) {
                 return true;
@@ -1429,7 +1484,7 @@ public:
         return false;
     }
 
-    bool find(const T& value, size_type& out_index) const {
+    constexpr bool find(const T& value, size_type& out_index) const {
         for (size_type i = 0; i < count; ++i) {
             if (elements[i] == value) {
                 out_index = i;
@@ -1441,7 +1496,7 @@ public:
 
     template<typename Predicate>
         requires std::is_invocable_r_v<bool, Predicate, const T&>
-    bool find_if(Predicate predicate, size_type& out_index) const {
+    constexpr bool find_if(Predicate predicate, size_type& out_index) const {
         for (size_type i = 0; i < count; ++i) {
             if (predicate(elements[i])) {
                 out_index = i;
@@ -1451,15 +1506,15 @@ public:
         return false;
     }
 
-    size_type get_count() const {
+    constexpr size_type get_count() const {
         return count;
     }
 
-    T* get_data() {
+    constexpr T* get_data() {
         return elements;
     }
 
-    bool is_empty() const {
+    constexpr bool is_empty() const {
         return count == 0;
     }
 
